@@ -1,8 +1,6 @@
 package com.example.springpractice.controller;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
-
+import com.example.springpractice.bean.Exam;
 import com.example.springpractice.bean.SampleResponse;
 import com.example.springpractice.bean.User;
 import com.example.springpractice.repository.UserRepository;
@@ -22,6 +20,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 public class UserController {
@@ -95,21 +96,16 @@ public class UserController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<Object> deleteUser(@PathVariable long id) {
-        Optional<User> user = repository.findById(id);
-        try {
-            if (user.isPresent()) {
-                repository.delete(user.get());
-                URI location = ServletUriComponentsBuilder
-                        .fromCurrentRequest()
-                        .path("/{id}")
-                        .buildAndExpand(id).toUri();
-                return ResponseEntity.created(location).build();
-            } else {
-                return ResponseEntity.badRequest().body("Unable to delete user id: " + id);
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Unable to delete user id: " + id);
+    public void deleteUser(@PathVariable long id) {
+        repository.deleteById(id);
+    }
+
+    @GetMapping("/users/{id}/exams")
+    public List<Exam> getUsersExams(@PathVariable long id) {
+        Optional<User> userById = repository.findById(id);
+        if (!userById.isPresent()) {
+            throw new UserNotFoundException("user id: " + id);
         }
+        return userById.get().getExam();
     }
 }

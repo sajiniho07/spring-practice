@@ -7,7 +7,9 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.validation.constraints.Size;
+import java.util.List;
 
 @ApiModel(description = "All details about users.")
 @Entity
@@ -25,6 +27,9 @@ public class User {
     private String role;
     @JsonIgnore
     private String password;
+
+    @OneToMany(mappedBy = "user")
+    private List<Exam> exam;
 
     public User() {
     }
@@ -74,5 +79,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public List<Exam> getExam() {
+        return exam;
+    }
+
+    public void setExam(List<Exam> exam) {
+        this.exam = exam;
     }
 }
