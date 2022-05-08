@@ -1,11 +1,5 @@
 package com.example.springpractice.helper;
 
-import com.example.springpractice.bean.Exam;
-import com.example.springpractice.bean.User;
-import com.example.springpractice.repository.PostRepository;
-import com.example.springpractice.repository.UserRepository;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 @Component

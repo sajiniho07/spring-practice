@@ -3,6 +3,7 @@ package com.example.springpractice.controller;
 import com.example.springpractice.bean.Exam;
 import com.example.springpractice.bean.SampleResponse;
 import com.example.springpractice.bean.User;
+import com.example.springpractice.repository.ExamRepository;
 import com.example.springpractice.repository.UserRepository;
 import com.example.springpractice.service.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +29,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class UserController {
 
     @Autowired
-    private final UserRepository repository;
-
-    UserController(UserRepository repository) {
-        this.repository = repository;
-    }
+    private UserRepository userRepository;
+    @Autowired
+    private ExamRepository examRepository;
 
     @GetMapping("/")
     public String index() {
@@ -50,7 +49,7 @@ public class UserController {
 
     @GetMapping("/users")
     public ResponseEntity<CollectionModel<EntityModel<User>>> findAll() {
-        Stream<User> stream = StreamSupport.stream(repository.findAll().spliterator(), false);
+        Stream<User> stream = StreamSupport.stream(userRepository.findAll().spliterator(), false);
         Stream<EntityModel<User>> entityModelStream = stream.map(EntityModel::of);
         List<EntityModel<User>> employees = entityModelStream.collect(Collectors.toList());
 
@@ -59,8 +58,8 @@ public class UserController {
 
     @GetMapping("/users/{id}")
     public EntityModel<User> findOne(@PathVariable long id) {
-        Optional<User> byId = repository.findById(id);
-        if (!byId.isPresent()) {
+        Optional<User> byId = userRepository.findById(id);
+        if (byId.isEmpty()) {
             throw new UserNotFoundException("user id: " + id);
         }
         EntityModel<User> resource = EntityModel.of(byId.get());
@@ -72,7 +71,7 @@ public class UserController {
     @PostMapping("/users")
     public ResponseEntity<Object> createUser(@Valid @RequestBody User user) {
         try {
-            User savedUser = repository.save(user);
+            User savedUser = userRepository.save(user);
             URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(savedUser.getId()).toUri();
             return ResponseEntity.created(location).build();
         } catch (Exception e) {
@@ -82,12 +81,12 @@ public class UserController {
 
     @PostMapping("/users/{id}")
     public ResponseEntity<Object> updateUser(@RequestBody User user, @PathVariable long id) {
-        Optional<User> userById = repository.findById(id);
-        if (!userById.isPresent()) {
+        Optional<User> userById = userRepository.findById(id);
+        if (userById.isEmpty()) {
             throw new UserNotFoundException("user id: " + id);
         }
         try {
-            repository.save(user);
+            userRepository.save(user);
             URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(id).toUri();
             return ResponseEntity.created(location).build();
         } catch (Exception e) {
@@ -97,15 +96,28 @@ public class UserController {
 
     @DeleteMapping("/users/{id}")
     public void deleteUser(@PathVariable long id) {
-        repository.deleteById(id);
+        userRepository.deleteById(id);
     }
 
     @GetMapping("/users/{id}/exams")
     public List<Exam> getUsersExams(@PathVariable long id) {
-        Optional<User> userById = repository.findById(id);
-        if (!userById.isPresent()) {
+        Optional<User> userById = userRepository.findById(id);
+        if (userById.isEmpty()) {
             throw new UserNotFoundException("user id: " + id);
         }
         return userById.get().getExam();
+    }
+
+    @PostMapping("/users/{id}/exams")
+    public ResponseEntity<Object> createExam(@PathVariable Long id, @RequestBody Exam exam) {
+        Optional<User> userOptional = userRepository.findById(id);
+        if(userOptional.isEmpty()) {
+            throw new UserNotFoundException("id-" + id);
+        }
+        User user = userOptional.get();
+        exam.setUser(user);
+        examRepository.save(exam);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(exam.getId()).toUri();
+        return ResponseEntity.created(location).build();
     }
 }
